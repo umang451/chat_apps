@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application Workflow</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            scroll-behavior: smooth;
+        }
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 10px 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            animation: pulse 15s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.05); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 0.3; }
+        }
+        .section-title {
+            border-left: 5px solid #6a11cb;
+            padding-left: 15px;
+            margin: 30px 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-title .toggle-btn {
+            background: none;
+            border: none;
+            color: #6a11cb;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .section-title .toggle-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+        .workflow-card {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .workflow-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            font-weight: bold;
+        }
+        .diagram {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .diagram img {
+            max-width: 100%;
+        }
+        .table-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .phase {
+            display: flex;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .phase-item {
+            flex: 1;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: 0 10px;
+            text-align: center;
+            min-width: 200px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .phase-item:hover {
+            background-color: #f0f7ff;
+            transform: translateY(-5px);
+        }
+        .phase-item i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #6a11cb;
+        }
+        .phase-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #6a11cb;
+        }
+        .database-schema {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .timeline {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            background-color: #6a11cb;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -3px;
+        }
+        .timeline-container {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            right: -13px;
+            background-color: white;
+            border: 4px solid #6a11cb;
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .left {
+            left: 0;
+        }
+        .right {
+            left: 50%;
+        }
+        .left::before {
+            content: " ";
+            height: 0;
+            position: absolute;
+            top: 22px;
+            width: 0;
+            z-index: 1;
+            right: 30px;
+            border: medium solid #fff;
+            border-width: 10px 0 10px 10px;
+            border-color: transparent transparent transparent white;
+        }
+        .right::before {
+            content: " ";
+            height: 0;
+            position: absolute;
+            top: 22px;
+            width: 0;
+            z-index: 1;
+            left: 30px;
+            border: medium solid #fff;
+            border-width: 10px 10px 10px 0;
+            border-color: transparent white transparent transparent;
+        }
+        .right::after {
+            left: -12px;
+        }
+        .timeline-content {
+            padding: 20px 30px;
+            background-color: white;
+            position: relative;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .detail-panel {
+            display: none;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #6a11cb;
+        }
+        .progress-container {
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+            height: 8px;
+            background: transparent;
+        }
+        .progress-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            width: 0%;
+        }
+        .floating-nav {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+        }
+        .floating-nav .btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 5px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .tech-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background-color: #e9ecef;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .tech-badge:hover {
+            background-color: #6a11cb;
+            color: white;
+            transform: translateY(-3px);
+        }
+        .recommendation {
+            background-color: #e8f4ff;
+            border-left: 4px solid #2575fc;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .recommendation h5 {
+            color: #2575fc;
+            margin-bottom: 10px;
+        }
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        @media screen and (max-width: 600px) {
+            .timeline::after {
+                left: 31px;
+            }
+            .timeline-container {
+                width: 100%;
+                padding-left: 70px;
+                padding-right: 25px;
+            }
+            .timeline-container::before {
+                left: 60px;
+                border: medium solid white;
+                border-width: 10px 10px 10px 0;
+                border-color: transparent white transparent transparent;
+            }
+            .left::after, .right::after {
+                left: 18px;
+            }
+            .right {
+                left: 0%;
+            }
+            .phase {
+                flex-direction: column;
+            }
+            .phase-item {
+                margin: 10px 0;
+            }
+            .phase-arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="header text-center">
+        <h1><i class="fas fa-comments"></i> Chat Application Project Workflow</h1>
+        <p class="lead">A comprehensive guide to building a Discord-like chat application</p>
+        <div class="tech-stack justify-content-center">
+            <span class="tech-badge"><i class="fab fa-html5"></i> HTML5</span>
+            <span class="tech-badge"><i class="fab fa-css3-alt"></i> CSS3</span>
+            <span class="tech-badge"><i class="fab fa-bootstrap"></i> Bootstrap</span>
+            <span class="tech-badge"><i class="fab fa-js"></i> JavaScript</span>
+            <span class="tech-badge"><i class="fab fa-php"></i> PHP</span>
+            <span class="tech-badge"><i class="fas fa-database"></i> MySQL</span>
+            <span class="tech-badge"><i class="fab fa-github"></i> GitHub</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h2 class="section-title">
+                    Project Overview
+                    <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#overviewContent" title="Toggle Overview Content" aria-label="Toggle Overview Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+                </h2>
+                <div id="overviewContent" class="collapse show">
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-project-diagram"></i> About the Project
+                        </div>
+                        <div class="card-body">
+                            <p>This chat application is designed to provide functionality similar to Discord, allowing users to:</p>
+                            <ul>
+                                <li>Register and login to the platform</li>
+                                <li>Create or join servers</li>
+                                <li>Join channels for text chat or voice calls</li>
+                                <li>Communicate with other users in real-time</li>
+                                <li>Share media and files</li>
+                                <li>Manage user roles and permissions</li>
+                                <li>Customize user profiles and settings</li>
+                            </ul>
+                            <p><strong>Technologies Used:</strong> HTML, CSS, Bootstrap, JavaScript, PHP, MySQL, GitHub</p>
+                            
+                            <div class="recommendation">
+                                <h5><i class="fas fa-lightbulb"></i> Recommendation</h5>
+                                <p>Consider implementing WebSockets for real-time communication instead of traditional AJAX polling. This will significantly improve the responsiveness of your chat application and reduce server load.</p>
+                                <p>Recommended libraries:</p>
+                                <ul>
+                                    <li>Ratchet (PHP WebSocket library)</li>
+                                    <li>Socket.io (JavaScript client)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            System Architecture
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#architectureContent" title="Toggle Architecture Content" aria-label="Toggle Architecture Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="architectureContent" class="collapse show">
+            <div class="diagram">
+                <pre class="text-center" id="architectureDiagram">
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │
+│    Frontend     │◄───►│     Backend     │◄───►│    Database     │
+│  (HTML/CSS/JS)  │     │     (PHP)       │     │    (MySQL)      │
+│                 │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                </pre>
+                <div class="mt-4">
+                    <p><strong>Frontend (Client-Side):</strong> Responsible for the user interface and experience. Built with HTML, CSS, Bootstrap for styling, and JavaScript for interactivity.</p>
+                    <p><strong>Backend (Server-Side):</strong> Handles business logic, authentication, data processing, and communication with the database. Built with PHP.</p>
+                    <p><strong>Database:</strong> Stores all application data including user information, messages, server details, etc. Uses MySQL for relational data storage.</p>
+                </div>
+                
+                <div class="recommendation">
+                    <h5><i class="fas fa-lightbulb"></i> Architecture Recommendations</h5>
+                    <p>Consider implementing a layered architecture for better code organization:</p>
+                    <ul>
+                        <li><strong>Presentation Layer:</strong> HTML templates, CSS, JavaScript</li>
+                        <li><strong>Application Layer:</strong> PHP controllers, business logic</li>
+                        <li><strong>Data Access Layer:</strong> Database queries, models</li>
+                        <li><strong>Service Layer:</strong> External APIs, WebSockets</li>
+                    </ul>
+                    <p>This separation of concerns will make your codebase more maintainable and easier to extend.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            User Flow
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#userFlowContent" title="Toggle User Flow Content" aria-label="Toggle User Flow Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="userFlowContent" class="collapse show">
+            <div class="diagram">
+                <pre class="text-center" id="userFlowDiagram">
+┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐
+│         │     │         │     │         │     │         │
+│ Register│────►│  Login  │────►│ Servers │────►│Channels │
+│         │     │         │     │         │     │         │
+└─────────┘     └─────────┘     └─────────┘     └─────────┘
+                                    │               │
+                                    │               │
+                                    ▼               ▼
+                               ┌─────────┐     ┌─────────┐
+                               │         │     │         │
+                               │ Create  │     │ Text or │
+                               │ Server  │     │ Voice   │
+                               │         │     │         │
+                               └─────────┘     └─────────┘
+                </pre>
+                
+                <div class="mt-4">
+                    <h5>Detailed User Flow:</h5>
+                    <ol>
+                        <li><strong>User Registration/Login:</strong> New users register with email/password or social login. Existing users authenticate.</li>
+                        <li><strong>Server Selection:</strong> Users can join existing servers or create their own.</li>
+                        <li><strong>Channel Navigation:</strong> Within servers, users can browse and join different channels.</li>
+                        <li><strong>Communication:</strong> Users can send messages, share media, or join voice calls in appropriate channels.</li>
+                        <li><strong>User Management:</strong> Add friends, customize profile, adjust notification settings.</li>
+                    </ol>
+                </div>
+                
+                <div class="recommendation">
+                    <h5><i class="fas fa-lightbulb"></i> User Experience Recommendations</h5>
+                    <p>Implement these features to enhance user experience:</p>
+                    <ul>
+                        <li>Social login options (Google, Facebook) for faster onboarding</li>
+                        <li>Guided tour for first-time users</li>
+                        <li>Server discovery feature to find public servers</li>
+                        <li>Keyboard shortcuts for power users</li>
+                        <li>Offline mode with message queuing</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h2 class="section-title">
+                    Frontend Pages
+                    <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#frontendContent" title="Toggle Frontend Content" aria-label="Toggle Frontend Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+                </h2>
+                <div id="frontendContent" class="collapse show">
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-file-code"></i> Authentication Pages
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li><strong>Login page</strong> - User authentication with email/password</li>
+                                <li><strong>Registration page</strong> - New user signup with validation</li>
+                                <li><strong>Password recovery page</strong> - Reset forgotten passwords</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('auth-details')">View Details</button>
+                            <div id="auth-details" class="detail-panel">
+                                <h5>Authentication Page Requirements:</h5>
+                                <ul>
+                                    <li><strong>Login Page:</strong> Email/username field, password field, remember me option, forgot password link, register link</li>
+                                    <li><strong>Registration Page:</strong> Username field, email field, password field with strength indicator, confirm password, terms acceptance checkbox</li>
+                                    <li><strong>Password Recovery:</strong> Email field, security questions, new password setup</li>
+                                </ul>
+                                <p>Implement client-side validation using JavaScript to check for:</p>
+                                <ul>
+                                    <li>Valid email format</li>
+                                    <li>Password strength (min 8 chars, special chars, numbers)</li>
+                                    <li>Username availability (AJAX check)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-file-code"></i> Main Application Pages
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li><strong>Home/Dashboard</strong> - Overview of servers and recent activity</li>
+                                <li><strong>Server list/navigation</strong> - Sidebar for server selection</li>
+                                <li><strong>Channel view</strong> - Chat interface with message history</li>
+                                <li><strong>Voice call interface</strong> - Audio controls and participant list</li>
+                                <li><strong>User profile/settings</strong> - Personal information and preferences</li>
+                                <li><strong>Server creation/management</strong> - Create and configure servers</li>
+                                <li><strong>Channel creation/management</strong> - Create and configure channels</li>
+                                <li><strong>Friends/contacts list</strong> - Manage connections with other users</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('app-details')">View Details</button>
+                            <div id="app-details" class="detail-panel">
+                                <h5>Main Application UI Components:</h5>
+                                <ul>
+                                    <li><strong>Navigation:</strong> Server sidebar (left), channel list (left-center), user list (right)</li>
+                                    <li><strong>Chat Area:</strong> Message history, input box with formatting options, file upload</li>
+                                    <li><strong>User Card:</strong> Profile picture, status indicator, username, current activity</li>
+                                    <li><strong>Server Card:</strong> Server icon, name, member count, notification badges</li>
+                                    <li><strong>Settings Panels:</strong> Tabbed interface for different setting categories</li>
+                                </ul>
+                                <p>Recommended UI Framework: Bootstrap with custom components for specialized elements like the chat interface.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation">
+                        <h5><i class="fas fa-lightbulb"></i> Frontend Recommendations</h5>
+                        <p>Consider these modern approaches for your frontend:</p>
+                        <ul>
+                            <li>Use CSS Grid for complex layouts instead of just Bootstrap columns</li>
+                            <li>Implement dark/light theme toggle with CSS variables</li>
+                            <li>Create a component-based architecture even with vanilla JS</li>
+                            <li>Use local storage for user preferences and draft messages</li>
+                            <li>Implement lazy loading for message history</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h2 class="section-title">
+                    Backend Components
+                    <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#backendContent" title="Toggle Backend Content" aria-label="Toggle Backend Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+                </h2>
+                <div id="backendContent" class="collapse show">
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-server"></i> Core Systems
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li><strong>Authentication System</strong>: User registration, login/logout, session management, password hashing, JWT tokens</li>
+                                <li><strong>Server Management</strong>: Create/edit/delete servers, join via invite, role assignment</li>
+                                <li><strong>Channel Management</strong>: Create/edit/delete channels, permissions, channel types</li>
+                                <li><strong>Messaging System</strong>: Send/receive messages, history, editing, deletion, file attachments</li>
+                                <li><strong>Voice Call System</strong>: Voice channel connection, audio streaming, mute/unmute</li>
+                                <li><strong>User Management</strong>: User profiles, friend requests, status tracking, notifications</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('backend-details')">View Details</button>
+                            <div id="backend-details" class="detail-panel">
+                                <h5>Backend Architecture Details:</h5>
+                                <p><strong>Authentication System:</strong></p>
+                                <ul>
+                                    <li>Use PHP sessions for authentication state</li>
+                                    <li>Implement CSRF protection for all forms</li>
+                                    <li>Store passwords with bcrypt hashing</li>
+                                    <li>Rate limiting for login attempts</li>
+                                </ul>
+                                <p><strong>Real-time Communication:</strong></p>
+                                <ul>
+                                    <li>WebSocket server for instant messaging</li>
+                                    <li>Message queuing for offline users</li>
+                                    <li>Notification system for mentions and DMs</li>
+                                </ul>
+                                <p><strong>File Handling:</strong></p>
+                                <ul>
+                                    <li>Secure file uploads with type validation</li>
+                                    <li>Image processing for thumbnails and previews</li>
+                                    <li>CDN integration for media storage (optional)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation">
+                        <h5><i class="fas fa-lightbulb"></i> Backend Recommendations</h5>
+                        <p>Implement these patterns for a robust backend:</p>
+                        <ul>
+                            <li>Use MVC architecture to separate concerns</li>
+                            <li>Create a RESTful API for frontend communication</li>
+                            <li>Implement middleware for authentication and logging</li>
+                            <li>Use prepared statements for all database queries</li>
+                            <li>Create service classes for business logic</li>
+                            <li>Implement caching for frequently accessed data</li>
+                        </ul>
+                        <p>Consider using a PHP framework like Laravel or Slim for more complex applications.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            Database Schema
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#schemaContent" title="Toggle Schema Content" aria-label="Toggle Schema Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="schemaContent" class="collapse show">
+            <div class="diagram">
+                <pre class="database-schema" id="dbSchemaDiagram">
+┌───────────┐     ┌───────────┐     ┌───────────┐
+│  users    │     │  servers  │     │ channels  │
+├───────────┤     ├───────────┤     ├───────────┤
+│ user_id   │◄───►│ server_id │◄───►│ channel_id│
+│ username  │     │ name      │     │ name      │
+│ email     │     │ owner_id  │     │ server_id │
+│ password  │     │ icon      │     │ type      │
+│ avatar    │     │ created_at│     │ topic     │
+│ status    │     └───────────┘     │ created_at│
+│ created_at│                       └───────────┘
+└───────────┘                             ▲
+      ▲                 ▲                 │
+      │                 │                 │
+      │                 │                 │
+      ▼                 ▼                 ▼
+┌───────────┐     ┌───────────┐     ┌───────────┐
+│  friends  │     │  server_  │     │ messages  │
+├───────────┤     │  members  │     ├───────────┤
+│ friend_id │     ├───────────┤     │ message_id│
+│ user_id1  │     │ member_id │     │ channel_id│
+│ user_id2  │     │ server_id │     │ user_id   │
+│ status    │     │ user_id   │     │ content   │
+│ created_at│     │ role_id   │     │ attachment│
+└───────────┘     │ joined_at │     │ created_at│
+                  └───────────┘     │ updated_at│
+                                    └───────────┘
+                </pre>
+                
+                <div class="mt-4">
+                    <h5>Key Relationships:</h5>
+                    <ul>
+                        <li>A <strong>user</strong> can be a member of multiple <strong>servers</strong></li>
+                        <li>A <strong>server</strong> can have multiple <strong>channels</strong></li>
+                        <li>A <strong>channel</strong> contains multiple <strong>messages</strong></li>
+                        <li><strong>Server members</strong> have specific <strong>roles</strong> within each server</li>
+                        <li><strong>Friends</strong> represent connections between <strong>users</strong></li>
+                    </ul>
+                </div>
+                
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('schema-details')">View Detailed Schema</button>
+                <div id="schema-details" class="detail-panel">
+                    <h5>Complete Database Schema:</h5>
+                    
+                    <p><strong>users</strong> table:</p>
+                    <ul>
+                        <li>user_id (PK, AUTO_INCREMENT)</li>
+                        <li>username (VARCHAR, UNIQUE)</li>
+                        <li>email (VARCHAR, UNIQUE)</li>
+                        <li>password (VARCHAR, hashed)</li>
+                        <li>avatar (VARCHAR, URL to image)</li>
+                        <li>status (ENUM: 'online', 'idle', 'dnd', 'offline')</li>
+                        <li>bio (TEXT)</li>
+                        <li>last_login (DATETIME)</li>
+                        <li>created_at (DATETIME)</li>
+                        <li>created_at (DATETIME)</li>
+                        <li>updated_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>servers</strong> table:</p>
+                    <ul>
+                        <li>server_id (PK, AUTO_INCREMENT)</li>
+                        <li>name (VARCHAR)</li>
+                        <li>description (TEXT)</li>
+                        <li>owner_id (FK to users.user_id)</li>
+                        <li>icon (VARCHAR, URL to image)</li>
+                        <li>banner (VARCHAR, URL to image)</li>
+                        <li>is_public (BOOLEAN)</li>
+                        <li>invite_code (VARCHAR, UNIQUE)</li>
+                        <li>created_at (DATETIME)</li>
+                        <li>updated_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>channels</strong> table:</p>
+                    <ul>
+                        <li>channel_id (PK, AUTO_INCREMENT)</li>
+                        <li>server_id (FK to servers.server_id)</li>
+                        <li>name (VARCHAR)</li>
+                        <li>type (ENUM: 'text', 'voice')</li>
+                        <li>topic (VARCHAR)</li>
+                        <li>position (INT, for ordering)</li>
+                        <li>is_private (BOOLEAN)</li>
+                        <li>created_at (DATETIME)</li>
+                        <li>updated_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>messages</strong> table:</p>
+                    <ul>
+                        <li>message_id (PK, AUTO_INCREMENT)</li>
+                        <li>channel_id (FK to channels.channel_id)</li>
+                        <li>user_id (FK to users.user_id)</li>
+                        <li>content (TEXT)</li>
+                        <li>attachment (VARCHAR, URL to file)</li>
+                        <li>is_pinned (BOOLEAN)</li>
+                        <li>is_edited (BOOLEAN)</li>
+                        <li>created_at (DATETIME)</li>
+                        <li>updated_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>server_members</strong> table:</p>
+                    <ul>
+                        <li>member_id (PK, AUTO_INCREMENT)</li>
+                        <li>server_id (FK to servers.server_id)</li>
+                        <li>user_id (FK to users.user_id)</li>
+                        <li>nickname (VARCHAR)</li>
+                        <li>role_id (FK to roles.role_id)</li>
+                        <li>joined_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>roles</strong> table:</p>
+                    <ul>
+                        <li>role_id (PK, AUTO_INCREMENT)</li>
+                        <li>server_id (FK to servers.server_id)</li>
+                        <li>name (VARCHAR)</li>
+                        <li>color (VARCHAR, hex color)</li>
+                        <li>permissions (INT, bitwise flags)</li>
+                        <li>position (INT, for hierarchy)</li>
+                        <li>created_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>friends</strong> table:</p>
+                    <ul>
+                        <li>friend_id (PK, AUTO_INCREMENT)</li>
+                        <li>user_id1 (FK to users.user_id)</li>
+                        <li>user_id2 (FK to users.user_id)</li>
+                        <li>status (ENUM: 'pending', 'accepted', 'blocked')</li>
+                        <li>created_at (DATETIME)</li>
+                    </ul>
+                    
+                    <p><strong>voice_sessions</strong> table:</p>
+                    <ul>
+                        <li>session_id (PK, AUTO_INCREMENT)</li>
+                        <li>channel_id (FK to channels.channel_id)</li>
+                        <li>started_at (DATETIME)</li>
+                        <li>ended_at (DATETIME, NULL if active)</li>
+                    </ul>
+                    
+                    <p><strong>voice_participants</strong> table:</p>
+                    <ul>
+                        <li>participant_id (PK, AUTO_INCREMENT)</li>
+                        <li>session_id (FK to voice_sessions.session_id)</li>
+                        <li>user_id (FK to users.user_id)</li>
+                        <li>joined_at (DATETIME)</li>
+                        <li>left_at (DATETIME, NULL if still active)</li>
+                        <li>is_muted (BOOLEAN)</li>
+                        <li>is_deafened (BOOLEAN)</li>
+                    </ul>
+                </div>
+                
+                <div class="recommendation">
+                    <h5><i class="fas fa-lightbulb"></i> Database Recommendations</h5>
+                    <p>For optimal database performance and scalability:</p>
+                    <ul>
+                        <li>Add appropriate indexes on frequently queried columns</li>
+                        <li>Consider partitioning the messages table by date for large servers</li>
+                        <li>Implement soft deletes instead of hard deletes for messages</li>
+                        <li>Use foreign key constraints to maintain data integrity</li>
+                        <li>Consider using a separate database for file metadata and a CDN for actual file storage</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            Database Tables
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#tablesContent" title="Toggle Tables Content" aria-label="Toggle Tables Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="tablesContent" class="collapse show">
+            <div class="table-container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-table"></i> Core Tables</h4>
+                        <ul>
+                            <li><strong>users</strong> - User accounts and profiles</li>
+                            <li><strong>servers</strong> - Server information</li>
+                            <li><strong>server_members</strong> - User membership in servers</li>
+                            <li><strong>roles</strong> - User roles and permissions</li>
+                            <li><strong>channels</strong> - Text and voice channels</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-table"></i> Functional Tables</h4>
+                        <ul>
+                            <li><strong>messages</strong> - Chat messages</li>
+                            <li><strong>friends</strong> - Friend relationships</li>
+                            <li><strong>voice_sessions</strong> - Voice call sessions</li>
+                            <li><strong>voice_participants</strong> - Users in voice calls</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>SQL Creation Scripts:</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleDetail('sql-scripts')">View SQL Scripts</button>
+                    <div id="sql-scripts" class="detail-panel">
+                        <pre class="database-schema">
+-- Users table
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    avatar VARCHAR(255),
+    status ENUM('online', 'idle', 'dnd', 'offline') DEFAULT 'offline',
+    bio TEXT,
+    last_login DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Servers table
+CREATE TABLE servers (
+    server_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    owner_id INT NOT NULL,
+    icon VARCHAR(255),
+    banner VARCHAR(255),
+    is_public BOOLEAN DEFAULT FALSE,
+    invite_code VARCHAR(20) UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Channels table
+CREATE TABLE channels (
+    channel_id INT AUTO_INCREMENT PRIMARY KEY,
+    server_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    type ENUM('text', 'voice') DEFAULT 'text',
+    topic VARCHAR(255),
+    position INT DEFAULT 0,
+    is_private BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (server_id) REFERENCES servers(server_id) ON DELETE CASCADE
+);
+
+-- More tables follow the same pattern...
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            Key Functions
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#functionsContent" title="Toggle Functions Content" aria-label="Toggle Functions Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="functionsContent" class="collapse show">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-user-cog"></i> User Management
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>registerUser()</li>
+                                <li>loginUser()</li>
+                                <li>updateUserProfile()</li>
+                                <li>changePassword()</li>
+                                <li>getUserStatus()</li>
+                                <li>setUserStatus()</li>
+                                <li>getUserFriends()</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('user-functions')">View Code Examples</button>
+                            <div id="user-functions" class="detail-panel">
+                                <pre class="database-schema">
+// User registration function
+function registerUser($username, $email, $password) {
+    global $conn;
+    
+    // Validate input
+    if (empty($username) || empty($email) || empty($password)) {
+        return ['success' => false, 'message' => 'All fields are required'];
+    }
+    
+    // Check if username or email already exists
+    $stmt = $conn->prepare("SELECT user_id FROM users WHERE username = ? OR email = ?");
+    $stmt->bind_param("ss", $username, $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['success' => false, 'message' => 'Username or email already exists'];
+    }
+    
+    // Hash password
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    
+    // Insert new user
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password, created_at) VALUES (?, ?, ?, NOW())");
+    $stmt->bind_param("sss", $username, $email, $hashedPassword);
+    
+    if ($stmt->execute()) {
+        return ['success' => true, 'user_id' => $conn->insert_id];
+    } else {
+        return ['success' => false, 'message' => 'Registration failed: ' . $conn->error];
+    }
+}
+
+// User login function
+function loginUser($email, $password) {
+    global $conn;
+    
+    // Validate input
+    if (empty($email) || empty($password)) {
+        return ['success' => false, 'message' => 'Email and password are required'];
+    }
+    
+    // Get user by email
+    $stmt = $conn->prepare("SELECT user_id, username, password FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['success' => false, 'message' => 'Invalid email or password'];
+    }
+    
+    $user = $result->fetch_assoc();
+    
+    // Verify password
+    if (password_verify($password, $user['password'])) {
+        // Update last login time
+        $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW(), status = 'online' WHERE user_id = ?");
+        $updateStmt->bind_param("i", $user['user_id']);
+        $updateStmt->execute();
+        
+        // Start session
+        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['username'] = $user['username'];
+        
+        return ['success' => true, 'user_id' => $user['user_id'], 'username' => $user['username']];
+    } else {
+        return ['success' => false, 'message' => 'Invalid email or password'];
+    }
+}
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-server"></i> Server & Channel
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>createServer()</li>
+                                <li>joinServer()</li>
+                                <li>createChannel()</li>
+                                <li>updateChannel()</li>
+                                <li>getChannelMessages()</li>
+                                <li>getServerMembers()</li>
+                                <li>assignRole()</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('server-functions')">View Code Examples</button>
+                            <div id="server-functions" class="detail-panel">
+                                <pre class="database-schema">
+// Create a new server
+function createServer($name, $description, $owner_id, $icon = null) {
+    global $conn;
+    
+    // Generate a unique invite code
+    $invite_code = generateUniqueInviteCode();
+    
+    // Insert server
+    $stmt = $conn->prepare("INSERT INTO servers (name, description, owner_id, icon, invite_code, created_at) 
+                           VALUES (?, ?, ?, ?, ?, NOW())");
+    $stmt->bind_param("ssiss", $name, $description, $owner_id, $icon, $invite_code);
+    
+    if ($stmt->execute()) {
+        $server_id = $conn->insert_id;
+        
+        // Add owner as a member with admin role
+        addServerMember($server_id, $owner_id, 1); // 1 = admin role
+        
+        // Create default channels
+        createChannel($server_id, 'general', 'text', 'General discussion');
+        createChannel($server_id, 'voice-chat', 'voice', 'Voice chat channel');
+        
+        return ['success' => true, 'server_id' => $server_id, 'invite_code' => $invite_code];
+    } else {
+        return ['success' => false, 'message' => 'Failed to create server: ' . $conn->error];
+    }
+}
+
+// Join a server using invite code
+function joinServer($user_id, $invite_code) {
+    global $conn;
+    
+    // Find server by invite code
+    $stmt = $conn->prepare("SELECT server_id FROM servers WHERE invite_code = ?");
+    $stmt->bind_param("s", $invite_code);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['success' => false, 'message' => 'Invalid invite code'];
+    }
+    
+    $server = $result->fetch_assoc();
+    $server_id = $server['server_id'];
+    
+    // Check if user is already a member
+    $checkStmt = $conn->prepare("SELECT member_id FROM server_members WHERE server_id = ? AND user_id = ?");
+    $checkStmt->bind_param("ii", $server_id, $user_id);
+    $checkStmt->execute();
+    
+    if ($checkStmt->get_result()->num_rows > 0) {
+        return ['success' => false, 'message' => 'You are already a member of this server'];
+    }
+    
+    // Add user as member with default role
+    return addServerMember($server_id, $user_id, 2); // 2 = default member role
+}
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="workflow-card">
+                        <div class="card-header">
+                            <i class="fas fa-comments"></i> Communication
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>sendMessage()</li>
+                                <li>editMessage()</li>
+                                <li>deleteMessage()</li>
+                                <li>initiateVoiceCall()</li>
+                                <li>sendFriendRequest()</li>
+                                <li>acceptFriendRequest()</li>
+                                <li>uploadAttachment()</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleDetail('comm-functions')">View Code Examples</button>
+                            <div id="comm-functions" class="detail-panel">
+                                <pre class="database-schema">
+// Send a message to a channel
+function sendMessage($channel_id, $user_id, $content, $attachment = null) {
+    global $conn;
+    
+    // Check if user has permission to send messages in this channel
+    if (!canUserAccessChannel($user_id, $channel_id)) {
+        return ['success' => false, 'message' => 'You do not have permission to send messages in this channel'];
+    }
+    
+    // Insert message
+    $stmt = $conn->prepare("INSERT INTO messages (channel_id, user_id, content, attachment, created_at) 
+                           VALUES (?, ?, ?, ?, NOW())");
+    $stmt->bind_param("iiss", $channel_id, $user_id, $content, $attachment);
+    
+    if ($stmt->execute()) {
+        $message_id = $conn->insert_id;
+        
+        // Get message details for real-time update
+        $messageData = getMessageById($message_id);
+        
+        // Notify channel subscribers via WebSocket
+        notifyChannelSubscribers($channel_id, 'new_message', $messageData);
+        
+        return ['success' => true, 'message_id' => $message_id, 'data' => $messageData];
+    } else {
+        return ['success' => false, 'message' => 'Failed to send message: ' . $conn->error];
+    }
+}
+
+// Edit an existing message
+function editMessage($message_id, $user_id, $new_content) {
+    global $conn;
+    
+    // Check if user is the message author
+    $stmt = $conn->prepare("SELECT channel_id FROM messages WHERE message_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $message_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['success' => false, 'message' => 'You can only edit your own messages'];
+    }
+    
+    $message = $result->fetch_assoc();
+    $channel_id = $message['channel_id'];
+    
+    // Update message
+    $updateStmt = $conn->prepare("UPDATE messages SET content = ?, is_edited = 1, updated_at = NOW() WHERE message_id = ?");
+    $updateStmt->bind_param("si", $new_content, $message_id);
+    
+    if ($updateStmt->execute()) {
+        // Get updated message for real-time update
+        $messageData = getMessageById($message_id);
+        
+        // Notify channel subscribers via WebSocket
+        notifyChannelSubscribers($channel_id, 'edit_message', $messageData);
+        
+        return ['success' => true, 'data' => $messageData];
+    } else {
+        return ['success' => false, 'message' => 'Failed to edit message: ' . $conn->error];
+    }
+}
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recommendation mt-4">
+                <h5><i class="fas fa-lightbulb"></i> Function Design Recommendations</h5>
+                <p>For maintainable and secure code:</p>
+                <ul>
+                    <li>Implement proper input validation and sanitization for all user inputs</li>
+                    <li>Use prepared statements for all database queries to prevent SQL injection</li>
+                    <li>Create helper functions for common operations to avoid code duplication</li>
+                    <li>Implement proper error handling and logging</li>
+                    <li>Use transactions for operations that modify multiple tables</li>
+                    <li>Consider implementing a service layer pattern to separate business logic from data access</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            Development Phases
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#phasesContent" title="Toggle Development Phases Content" aria-label="Toggle Development Phases Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="phasesContent" class="collapse show">
+            <div class="phase">
+                <div class="phase-item" onclick="showPhaseDetails('phase1')">
+                    <i class="fas fa-user-lock"></i>
+                    <h4>Phase 1</h4>
+                    <p>Authentication System</p>
+                </div>
+                <div class="phase-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="phase-item" onclick="showPhaseDetails('phase2')">
+                    <i class="fas fa-server"></i>
+                    <h4>Phase 2</h4>
+                    <p>Server & Channels</p>
+                </div>
+                <div class="phase-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="phase-item" onclick="showPhaseDetails('phase3')">
+                    <i class="fas fa-comment-dots"></i>
+                    <h4>Phase 3</h4>
+                    <p>Messaging System</p>
+                </div>
+                <div class="phase-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="phase-item" onclick="showPhaseDetails('phase4')">
+                    <i class="fas fa-phone-alt"></i>
+                    <h4>Phase 4</h4>
+                    <p>Voice Call System</p>
+                </div>
+            </div>
+            
+            <div id="phaseDetails" class="mt-4 p-4 bg-light rounded d-none">
+                <h4 id="phaseTitle">Phase Details</h4>
+                <div id="phaseContent">
+                    <!-- Phase details will be loaded here -->
+                </div>
+            </div>
+            
+            <div id="phase1-content" class="d-none">
+                <h5>Authentication System Development</h5>
+                <p>This phase focuses on building the user authentication and account management system.</p>
+                <ul>
+                    <li><strong>Database Setup:</strong> Create users table and related schemas</li>
+                    <li><strong>Registration System:</strong> User signup with email verification</li>
+                    <li><strong>Login System:</strong> Secure authentication with session management</li>
+                    <li><strong>Password Management:</strong> Reset, recovery, and change functionality</li>
+                    <li><strong>Profile Management:</strong> User profile creation and editing</li>
+                </ul>
+                <p><strong>Estimated Time:</strong> 2 weeks</p>
+                <p><strong>Key Deliverables:</strong></p>
+                <ul>
+                    <li>Functional login and registration pages</li>
+                    <li>User profile management system</li>
+                    <li>Session management and security implementation</li>
+                </ul>
+            </div>
+            
+            <div id="phase2-content" class="d-none">
+                <h5>Server & Channel Management</h5>
+                <p>This phase focuses on building the server and channel infrastructure.</p>
+                <ul>
+                    <li><strong>Server Creation:</strong> Create and configure new servers</li>
+                    <li><strong>Server Joining:</strong> Join servers via invite links</li>
+                    <li><strong>Channel Management:</strong> Create, edit, and delete channels</li>
+                    <li><strong>Role System:</strong> Create roles with different permissions</li>
+                    <li><strong>Member Management:</strong> Add, remove, and manage server members</li>
+                </ul>
+                <p><strong>Estimated Time:</strong> 2-3 weeks</p>
+                <p><strong>Key Deliverables:</strong></p>
+                <ul>
+                    <li>Server creation and management interface</li>
+                    <li>Channel creation and configuration system</li>
+                    <li>Role and permission management</li>
+                    <li>Server invitation system</li>
+                </ul>
+            </div>
+            
+            <div id="phase3-content" class="d-none">
+                <h5>Messaging System</h5>
+                <p>This phase focuses on implementing the real-time messaging functionality.</p>
+                <ul>
+                    <li><strong>Text Messaging:</strong> Send and receive messages in channels</li>
+                    <li><strong>Real-time Updates:</strong> WebSocket integration for instant messaging</li>
+                    <li><strong>Message History:</strong> Load and display message history</li>
+                    <li><strong>File Sharing:</strong> Upload and share files in messages</li>
+                    <li><strong>Message Formatting:</strong> Basic text formatting and emoji support</li>
+                </ul>
+                <p><strong>Estimated Time:</strong> 3 weeks</p>
+                <p><strong>Key Deliverables:</strong></p>
+                <ul>
+                    <li>Functional chat interface</li>
+                    <li>Real-time message delivery system</li>
+                    <li>File upload and sharing functionality</li>
+                    <li>Message editing and deletion features</li>
+                </ul>
+            </div>
+            
+            <div id="phase4-content" class="d-none">
+                <h5>Voice Call System</h5>
+                <p>This phase focuses on implementing voice communication capabilities.</p>
+                <ul>
+                    <li><strong>Voice Channels:</strong> Join and leave voice channels</li>
+                    <li><strong>Audio Streaming:</strong> Real-time audio transmission</li>
+                    <li><strong>User Controls:</strong> Mute, deafen, and volume controls</li>
+                    <li><strong>Voice Activity Detection:</strong> Highlight active speakers</li>
+                    <li><strong>Connection Management:</strong> Handle connection issues gracefully</li>
+                </ul>
+                <p><strong>Estimated Time:</strong> 3-4 weeks</p>
+                <p><strong>Key Deliverables:</strong></p>
+                <ul>
+                    <li>Voice channel interface</li>
+                    <li>Audio streaming implementation</li>
+                    <li>User audio controls</li>
+                    <li>Voice activity visualization</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            Implementation Timeline
+            <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#timelineContent" title="Toggle Timeline Content" aria-label="Toggle Timeline Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+        </h2>
+        <div id="timelineContent" class="collapse show">
+            <div class="timeline">
+                <div class="timeline-container left">
+                    <div class="timeline-content">
+                        <h3>Weeks 1-2</h3>
+                        <p>Database Design & Authentication System</p>
+                        <ul>
+                            <li>Set up development environment</li>
+                            <li>Create database schema</li>
+                            <li>Implement user registration and login</li>
+                            <li>Build profile management system</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-container right">
+                    <div class="timeline-content">
+                        <h3>Weeks 3-4</h3>
+                        <p>Server & Channel Management</p>
+                        <ul>
+                            <li>Implement server creation and joining</li>
+                            <li>Build channel management system</li>
+                            <li>Create role and permission system</li>
+                            <li>Develop server member management</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-container left">
+                    <div class="timeline-content">
+                        <h3>Weeks 5-7</h3>
+                        <p>Messaging System & UI Development</p>
+                        <ul>
+                            <li>Implement WebSocket for real-time messaging</li>
+                            <li>Build message history loading</li>
+                            <li>Create file upload functionality</li>
+                            <li>Develop message formatting options</li>
+                            <li>Refine UI/UX for all components</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-container right">
+                    <div class="timeline-content">
+                        <h3>Weeks 8-10</h3>
+                        <p>Voice Call Implementation</p>
+                        <ul>
+                            <li>Set up WebRTC for voice communication</li>
+                            <li>Implement voice channel functionality</li>
+                            <li>Build user audio controls</li>
+                            <li>Create voice activity detection</li>
+                            <li>Test and optimize voice quality</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-container left">
+                    <div class="timeline-content">
+                        <h3>Weeks 11-12</h3>
+                        <p>Testing & Refinement</p>
+                        <ul>
+                            <li>Conduct comprehensive testing</li>
+                            <li>Fix bugs and optimize performance</li>
+                            <li>Implement security enhancements</li>
+                            <li>Refine UI/UX based on feedback</li>
+                            <li>Prepare for deployment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5 mb-5">
+            <div class="col-md-12">
+                <h2 class="section-title">
+                    Getting Started
+                    <button class="toggle-btn" data-bs-toggle="collapse" data-bs-target="#startContent" title="Toggle Getting Started Content" aria-label="Toggle Getting Started Content"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+                </h2>
+                <div id="startContent" class
+                <div id="startContent" class="collapse show">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="workflow-card">
+                                <div class="card-header">
+                                    <i class="fas fa-rocket"></i> Setup Instructions
+                                </div>
+                                <div class="card-body">
+                                    <h5>Environment Setup</h5>
+                                    <ol>
+                                        <li>Install XAMPP (Apache, MySQL, PHP)</li>
+                                        <li>Create a new database named "chat_app"</li>
+                                        <li>Import the database schema SQL file</li>
+                                        <li>Configure database connection in config.php</li>
+                                        <li>Install required PHP extensions (mysqli, json, mbstring)</li>
+                                    </ol>
+                                    
+                                    <h5>Project Structure</h5>
+                                    <pre class="directory-structure">
+chat_application/
+├── assets/
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── includes/
+│   ├── config.php
+│   ├── db.php
+│   ├── functions.php
+│   └── auth.php
+├── api/
+│   ├── users.php
+│   ├── servers.php
+│   ├── channels.php
+│   └── messages.php
+├── websocket/
+│   └── server.php
+├── index.php
+├── login.php
+├── register.php
+└── dashboard.php
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="workflow-card">
+                                <div class="card-header">
+                                    <i class="fas fa-code"></i> Initial Code Setup
+                                </div>
+                                <div class="card-body">
+                                    <h5>Configuration File</h5>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleDetail('config-code')">View Code</button>
+                                    <div id="config-code" class="detail-panel">
+                                        <pre class="code-example">
+// config.php
+<?php
+// Database configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'chat_app');
+
+// Application settings
+define('APP_NAME', 'Chat Application');
+define('APP_URL', 'http://localhost/chat_application');
+define('UPLOAD_DIR', __DIR__ . '/../uploads/');
+define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024); // 5MB
+
+// Security settings
+define('SECURE_COOKIE', false); // Set to true in production with HTTPS
+define('SESSION_LIFETIME', 86400); // 24 hours
+
+// WebSocket settings
+define('WS_SERVER', 'localhost');
+define('WS_PORT', 8080);
+?>
+                                        </pre>
+                                    </div>
+                                    
+                                    <h5>Database Connection</h5>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleDetail('db-code')">View Code</button>
+                                    <div id="db-code" class="detail-panel">
+                                        <pre class="code-example">
+// db.php
+<?php
+require_once 'config.php';
+
+// Create database connection
+function getDbConnection() {
+    static $conn;
+    
+    if ($conn === null) {
+        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        
+        // Check connection
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+        
+        // Set charset
+        $conn->set_charset("utf8mb4");
+    }
+    
+    return $conn;
+}
+
+// Get database connection
+$conn = getDbConnection();
+?>
+                                        </pre>
+                                    </div>
+                                    
+                                    <h5>Authentication Helper</h5>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleDetail('auth-code')">View Code</button>
+                                    <div id="auth-code" class="detail-panel">
+                                        <pre class="code-example">
+// auth.php
+<?php
+session_start();
+require_once 'db.php';
+require_once 'functions.php';
+
+// Check if user is logged in
+function isLoggedIn() {
+    return isset($_SESSION['user_id']);
+}
+
+// Get current user data
+function getCurrentUser() {
+    if (!isLoggedIn()) {
+        return null;
+    }
+    
+    global $conn;
+    $user_id = $_SESSION['user_id'];
+    
+    $stmt = $conn->prepare("SELECT user_id, username, email, avatar, status, bio, last_login 
+                           FROM users WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        // Session exists but user doesn't - clear session
+        session_unset();
+        session_destroy();
+        return null;
+    }
+    
+    return $result->fetch_assoc();
+}
+
+// Require login for protected pages
+function requireLogin() {
+    if (!isLoggedIn()) {
+        header("Location: login.php");
+        exit;
+    }
+}
+?>
+                                        </pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4><i class="fas fa-tasks"></i> Next Steps</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="next-steps">
+                                    <h5>1. Set Up Database</h5>
+                                    <p>Create the database and import the schema:</p>
+                                    <ol>
+                                        <li>Open phpMyAdmin (http://localhost/phpmyadmin)</li>
+                                        <li>Create a new database named "chat_app"</li>
+                                        <li>Import the SQL schema file from the project</li>
+                                        <li>Verify all tables are created correctly</li>
+                                    </ol>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="next-steps">
+                                    <h5>2. Implement Core Features</h5>
+                                    <p>Start with these essential components:</p>
+                                    <ol>
+                                        <li>User registration and login system</li>
+                                        <li>Server creation and management</li>
+                                        <li>Channel creation within servers</li>
+                                        <li>Basic messaging functionality</li>
+                                        <li>User profile management</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation mt-4">
+                        <h5><i class="fas fa-lightbulb"></i> Development Recommendations</h5>
+                        <p>For efficient development:</p>
+                        <ul>
+                            <li>Use version control (Git) from the beginning</li>
+                            <li>Follow a consistent coding style throughout the project</li>
+                            <li>Test each feature thoroughly before moving to the next</li>
+                            <li>Document your code as you write it</li>
+                            <li>Consider using a PHP framework for larger implementations</li>
+                            <li>Implement responsive design from the start</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for interactive elements -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle detail panels
+        function toggleDetail(id) {
+            const panel = document.getElementById(id);
+            if (panel.classList.contains('show')) {
+                panel.classList.remove('show');
+            } else {
+                panel.classList.add('show');
+            }
+        }
+        
+        // Show phase details
+        function showPhaseDetails(phaseId) {
+            // Hide all phase contents
+            document.querySelectorAll('[id$="-content"]').forEach(el => {
+                el.classList.add('d-none');
+            });
+            
+            // Show selected phase content
+            const phaseContent = document.getElementById(phaseId + '-content');
+            if (phaseContent) {
+                phaseContent.classList.remove('d-none');
+                
+                // Update phase details panel
+                const phaseDetails = document.getElementById('phaseDetails');
+                if (phaseDetails) {
+                    phaseDetails.classList.remove('d-none');
+                    
+                    const phaseTitle = document.getElementById('phaseTitle');
+                    const phaseContentEl = document.getElementById('phaseContent');
+                    
+                    if (phaseTitle) {
+                        const titleElement = document.querySelector(`[onclick="showPhaseDetails('${phaseId}')"] h4`);
+                        if (titleElement) {
+                            phaseTitle.textContent = titleElement.textContent;
+                        }
+                    }
+                    
+                    if (phaseContentEl) {
+                        phaseContentEl.innerHTML = phaseContent.innerHTML;
+                    }
+                }
+            }
+        }
+        
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners for toggle buttons
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    if (icon.classList.contains('fa-chevron-down')) {
+                        icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                    } else {
+                        icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                    }
+                });
+            });
+            
+            // Initialize detail panels
+            document.querySelectorAll('.detail-panel').forEach(panel => {
+                panel.classList.add('d-none');
+            });
+            
+            // Progress bar functionality
+            window.addEventListener('scroll', function() {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                document.getElementById('progressBar').style.width = scrolled + '%';
+            });
+        });
+        
+        // Toggle detail panels function
+        function toggleDetail(id) {
+            const panel = document.getElementById(id);
+            if (panel.classList.contains('d-none')) {
+                panel.classList.remove('d-none');
+            } else {
+                panel.classList.add('d-none');
+            }
+        }
+    </script>
+</body>
+</html>
